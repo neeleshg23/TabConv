@@ -14,6 +14,7 @@ torch.manual_seed(0)
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset abbreviation')
 parser.add_argument('--model', '-m', type=str, required=True, help='Model to train abbreviation')
+parser.add_argument('--gpu', '-g', type=int, required=True, help='GPU number')
 args = parser.parse_args()
 
 EPOCHS = 50
@@ -27,10 +28,9 @@ model_save_path = f'../0_RES/1_NN/{model_abbrev}-{DATASET}'
 
 log = Logger()
 log.set_logger(f'{model_save_path}.log') 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-train_loader, val_loader, test_loader, num_classes, num_channels = get_data(DATASET, VAL_SPLIT)
+device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+train_loader, val_loader, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', DATASET, VAL_SPLIT)
 model = select_model(model_abbrev)(num_classes, num_channels).to(device) 
-print(summary(model))
 optimizer = optim.Adam(model.parameters(), LR)
 
 run_epoch(model, train_loader, val_loader, optimizer, EPOCHS, EARLY_STOP, f'{model_save_path}.pth', device, log)

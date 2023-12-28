@@ -2,8 +2,8 @@
 import abc
 import numpy as np
 
-import vquantizers as vq
-import amm
+from . import vquantizers as vq
+from . import amm
 
 KEY_NLOOKUPS = 'nlookups'
 

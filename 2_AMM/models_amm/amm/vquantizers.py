@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import division, absolute_import
 
 import abc
@@ -7,8 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
 
-import product_quantize as pq
-from kmeans import kmeans
+from . import product_quantize as pq
+from .kmeans import kmeans
 # from old_utils import kmeans 
 
 # ================================================================ misc funcs
@@ -198,6 +196,7 @@ def _learn_centroids(X, ncentroids, ncodebooks, subvect_len):
     ret = np.empty((ncentroids, ncodebooks, subvect_len))
     # print("_learn_centroids(): running kmeans...")
     tot_sse = 0
+   
     X_bar = X - np.mean(X, axis=0)
     col_sses = np.sum(X_bar * X_bar, axis=0) + 1e-14
     tot_sse_using_mean = np.sum(col_sses)

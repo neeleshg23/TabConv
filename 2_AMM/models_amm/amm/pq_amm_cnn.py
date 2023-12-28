@@ -1,7 +1,6 @@
-import amm 
-import vquantizers as vq
-from vq_amm import VQMatmul
-
+from . import amm
+from . import vquantizers as vq
+from .vq_amm import VQMatmul
 class PQ_AMM_CNN(VQMatmul):
     def _create_encoder(self, ncodebooks):  # to be overriden by subclasses
         return vq.PQEncoder_CNN(ncodebooks=ncodebooks, ncentroids=self.ncentroids,
