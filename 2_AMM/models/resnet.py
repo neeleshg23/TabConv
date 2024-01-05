@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import cupy as cp
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -54,21 +55,23 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        intermediate = []
         out = self.conv1(x)
+        intermediate.append(cp.asarray(out.clone().detach().numpy()))
         out = self.bn1(out)
         out = F.relu(out)
-        for layer in self.layer1:
-            out = layer(out)
-        for layer in self.layer2:
-            out = layer(out)
-        for layer in self.layer3:
-            out = layer(out)
-        for layer in self.layer4:
-            out = layer(out)
+        
+        layers = [self.layer1, self.layer2, self.layer3, self.layer4]
+        for layer_group in layers:
+            for layer in layer_group:
+                out = layer(out)
+                intermediate.append(cp.asarray(out.clone().detach().numpy()))
+        
         out = self.adaptive_pool(out)
         out = out.view(out.size(0), -1)
         out = self.linear(out)
-        return out
+        intermediate.append(cp.asarray(out.clone().detach().numpy()))
+        return out, intermediate
 
 def resnet14(num_classes, num_channels):
     return ResNet(BasicBlock, [1, 1, 1, 1], num_classes, num_channels)

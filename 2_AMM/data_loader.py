@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision.datasets import CIFAR10, CIFAR100, ImageNet, SVHN, MNIST, EMNIST, KMNIST, FashionMNIST
 from torchvision import transforms
 import numpy as np
+import cupy as cp
 import json
 
 COLOR = ['c10', 'c100', 'in', 's']
@@ -108,7 +109,7 @@ def get_data(root, dataset, val_split=0.5):
 
     num_train = len(full_train_dataset)
     indices = list(range(num_train))
-    split = int(np.floor(val_split * num_train))
+    split = int(cp.floor(val_split * num_train))
 
     np.random.shuffle(indices)
 

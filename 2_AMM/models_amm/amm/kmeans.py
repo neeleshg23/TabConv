@@ -21,7 +21,8 @@ def kmeans(X, k, max_iter=16, init='subspaces', return_sse=False):
         if return_sse:
             return centroids, labels, 0
         return centroids, labels
-
+    
+    seeds = 'k-means++' 
     # Initialization of centroids
     if k >= 16 and init == 'subspaces':
         _, D = X.shape
@@ -40,7 +41,6 @@ def kmeans(X, k, max_iter=16, init='subspaces', return_sse=False):
     elif init not in ['subspaces']:
         raise ValueError("init parameter must be 'subspaces'")
 
-    # KMeans clustering with cuML
     est = cuKMeans(n_clusters=k, init=seeds, max_iter=max_iter, n_init=1).fit(X)
     if return_sse:
         return est.cluster_centers_, est.labels_, est.inertia_

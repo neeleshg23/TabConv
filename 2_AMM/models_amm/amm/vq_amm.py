@@ -1,6 +1,6 @@
 
 import abc
-import numpy as np
+import cupy as cp
 
 from . import vquantizers as vq
 from . import amm
@@ -35,6 +35,9 @@ class VQMatmul(amm.ApproxMatmul, abc.ABC):
     def reset_for_new_task(self):
         self.A_enc = None
         self.luts = None
+        
+    def reset_enc(self):
+        self.A_enc = None
 
     def fit(self, A, B, Y=None):
         _, D = A.shape

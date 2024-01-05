@@ -1,9 +1,9 @@
-import numpy as np
+import cupy as cp
 # ================================================================ metrics
 
 def _cossim(Y, Y_hat):
-    ynorm = np.linalg.norm(Y) + 1e-20
-    yhat_norm = np.linalg.norm(Y_hat) + 1e-20
+    ynorm = cp.linalg.norm(Y) + 1e-20
+    yhat_norm = cp.linalg.norm(Y_hat) + 1e-20
     return ((Y / ynorm) * (Y_hat / yhat_norm)).sum()
 
 def layer_cossim(layer_exact, layer_amm):

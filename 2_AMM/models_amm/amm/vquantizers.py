@@ -2,7 +2,7 @@ from __future__ import division, absolute_import
 
 import abc
 import matplotlib.pyplot as plt
-import numpy as np
+import cupy as cp
 import seaborn as sb
 
 from . import product_quantize as pq
@@ -20,7 +20,7 @@ def dists_elemwise_dot(x, q):
 def _insert_zeros(X, nzeros):
     N, D = X.shape
     D_new = D + nzeros
-    X_new = np.zeros((N, D_new), dtype=X.dtype)
+    X_new = cp.zeros((N, D_new), dtype=X.dtype)
     # print("attempting to insert {} zeros into X of shape {}".format(nzeros, X.shape))
 
     step = int(D / (nzeros + 1)) - 1
@@ -99,10 +99,10 @@ class MultiCodebookEncoder(abc.ABC):
         assert self.upcast_every in (1, 2, 4, 8, 16, 32, 64, 128, 256)
         self.accumulate_how = accumulate_how
 
-        self.code_bits = int(np.log2(self.ncentroids))
+        self.code_bits = int(cp.log2(self.ncentroids))
 
         # for fast lookups via indexing into flattened array
-        self.offsets = (np.arange(self.ncodebooks, dtype=np.int32) *
+        self.offsets = (cp.arange(self.ncodebooks, dtype=cp.int32) *
                         self.ncentroids)
 
     def name(self):
@@ -117,13 +117,13 @@ class MultiCodebookEncoder(abc.ABC):
 
     def dists_enc(self, X_enc, Q_luts, unquantize=False,
                           offset=None, scale=None):
-        X_enc = np.ascontiguousarray(X_enc)
+        X_enc = cp.ascontiguousarray(X_enc)
 
         if unquantize:
             offset = self.total_lut_offset if offset is None else offset
             scale = self.scale_by if scale is None else scale
 
-        all_dists = np.empty((len(Q_luts), len(X_enc)), dtype=np.float32)
+        all_dists = cp.empty((len(Q_luts), len(X_enc)), dtype=cp.float32)
         for i, lut in enumerate(Q_luts):
             centroid_dists = lut.ravel()[X_enc.ravel()]
             dists = centroid_dists.reshape(X_enc.shape)
@@ -136,7 +136,7 @@ class MultiCodebookEncoder(abc.ABC):
                     # sum upcast_every vals, then clip to mirror saturating
                     # unsigned addition, then sum without saturation (like u16)
                     dists = dists.sum(2)
-                    dists = np.clip(dists, 0, 255).sum(axis=-1)
+                    dists = cp.clip(dists, 0, 255).sum(axis=-1)
                 elif self.accumulate_how == 'mean':
                     # mirror hierarchical avg_epu8
                     # print("reducing using mean!")
@@ -153,7 +153,7 @@ class MultiCodebookEncoder(abc.ABC):
 
                     # I honestly don't know why this is the formula, but wow
                     # does it work well
-                    bias = self.ncodebooks / 4 * np.log2(self.upcast_every)
+                    bias = self.ncodebooks / 4 * cp.log2(self.upcast_every)
                     dists -= int(bias)
 
                 else:
@@ -168,13 +168,13 @@ class MultiCodebookEncoder(abc.ABC):
 
     def dists_enc_cnn(self, X_enc, Q_luts, unquantize=False,
                           offset=None, scale=None):
-        X_enc = np.ascontiguousarray(X_enc)
+        X_enc = cp.ascontiguousarray(X_enc)
 
         if unquantize:
             offset = self.total_lut_offset if offset is None else offset
             scale = self.scale_by if scale is None else scale
 
-        all_dists = np.empty((len(Q_luts),  len(X_enc)), dtype=np.float32)
+        all_dists = cp.empty((len(Q_luts),  len(X_enc)), dtype=cp.float32)
 
         for i, lut in enumerate(Q_luts):
             centroid_dists = lut.ravel()[X_enc.ravel()]
@@ -193,14 +193,22 @@ class MultiCodebookEncoder(abc.ABC):
 # ------------------------------------------------ Product Quantization
 
 def _learn_centroids(X, ncentroids, ncodebooks, subvect_len):
-    ret = np.empty((ncentroids, ncodebooks, subvect_len))
     # print("_learn_centroids(): running kmeans...")
     tot_sse = 0
-   
-    X_bar = X - np.mean(X, axis=0)
-    col_sses = np.sum(X_bar * X_bar, axis=0) + 1e-14
-    tot_sse_using_mean = np.sum(col_sses)
+    
+    # ret = np.empty((ncentroids, ncodebooks, subvect_len))
+    # X_bar = X - np.mean(X, axis=0)
+    # col_sses = np.sum(X_bar * X_bar, axis=0) + 1e-14
+    # tot_sse_using_mean = np.sum(col_sses)
+    X = cp.asarray(X)
+    
+    ret = cp.empty((ncentroids, ncodebooks, subvect_len))
+    tot_sse = 0
 
+    X_bar = X - cp.mean(X, axis=0)
+    col_sses = cp.sum(X_bar * X_bar, axis=0) + 1e-14
+    tot_sse_using_mean = cp.sum(col_sses)
+    
     for i in range(ncodebooks):
         print("running kmeans in subspace {}/{}...".format(
             i + 1, ncodebooks), end=" ")
@@ -212,14 +220,14 @@ def _learn_centroids(X, ncentroids, ncodebooks, subvect_len):
 
         # X_bar = X_in - np.mean(X_in, axis=0)
         # sse_using_mean = np.sum(X_bar * X_bar) + 1e-14
-        subspace_sse = np.sum(col_sses[start_col:end_col])
+        subspace_sse = cp.sum(col_sses[start_col:end_col])
         print("mse / {{var(X_subs), var(X)}}: {:.3g}, {:.3g}".format(
             sse / subspace_sse, sse * ncodebooks / tot_sse_using_mean))
         tot_sse += sse
         # print("centroids shape: ", centroids.shape)
         # print("ret shape: ", ret.shape)
-        ret[:, i, :] = centroids.get()
-        # ret[:, i, :] = centroids
+        ret[:, i, :] = centroids
+        # ret[:, i, :] = centroids.get()
 
     print("--- total mse / var(X): {:.3g}".format(tot_sse / tot_sse_using_mean))
 
@@ -229,7 +237,7 @@ def _learn_centroids(X, ncentroids, ncodebooks, subvect_len):
 def _fit_pq_lut(q, centroids, elemwise_dist_func):
     _, ncodebooks, subvect_len = centroids.shape
     q = q.reshape((1, ncodebooks, subvect_len))
-    q_dists = np.sum(centroids * q, axis=-1) #dists: distribution?
+    q_dists = cp.sum(centroids * q, axis=-1) #dists: distribution?
     #q_dists: (16,2): ncentroids row, ncodebooks column table
     return q_dists  # ncentroids, ncodebooks, row-major
 
@@ -255,7 +263,7 @@ class PQEncoder(MultiCodebookEncoder):
         return ensure_num_cols_multiple_of(X, self.ncodebooks)
 
     def fit(self, X, Q=None):#kmeans learn centroids
-        self.subvect_len = int(np.ceil(X.shape[1] / self.ncodebooks))
+        self.subvect_len = int(cp.ceil(X.shape[1] / self.ncodebooks))
         X = self._pad_ncols(X)
         self.centroids = None
         if self.centroids is None:
@@ -275,18 +283,18 @@ class PQEncoder(MultiCodebookEncoder):
         # quantization learning needs to call this func, but vars like
         # lut_offsets aren't set when this function calls it
 
-        Q = np.atleast_2d(Q)
+        Q = cp.atleast_2d(Q)
         Q = self._pad_ncols(Q)
 
-        luts = np.zeros((Q.shape[0], self.ncodebooks, self.ncentroids))
+        luts = cp.zeros((Q.shape[0], self.ncodebooks, self.ncentroids))
         # print("Q shape: ", Q.shape) Q(64, 100)
         for i, q in enumerate(Q):
             lut = _fit_pq_lut(q, centroids=self.centroids,
                               elemwise_dist_func=self.elemwise_dist_func)
             if self.quantize_lut and quantize:
-                lut = np.maximum(0, lut - self.lut_offsets)
-                lut = np.floor(lut * self.scale_by).astype(np.int32)
-                lut = np.minimum(lut, 255)
+                lut = cp.maximum(0, lut - self.lut_offsets)
+                lut = cp.floor(lut * self.scale_by).astype(cp.int32)
+                lut = cp.minimum(lut, 255)
             luts[i] = lut.T
         return luts
 
@@ -303,7 +311,7 @@ class PQEncoder(MultiCodebookEncoder):
 def _fit_pq_lut_cnn(q, centroids):
     _, ncodebooks, subvect_len = centroids.shape
     q = q.reshape((1, ncodebooks, subvect_len))
-    q_dists = np.sum(centroids * q, axis=-1) #dists: distribution?
+    q_dists = cp.sum(centroids * q, axis=-1) #dists: distribution?
     #q_dists: (16,2): ncentroids row, ncodebooks column table
     return q_dists  # ncentroids, ncodebooks, row-major
 
@@ -330,7 +338,7 @@ class PQEncoder_CNN(MultiCodebookEncoder):
         return ensure_num_cols_multiple_of(X, self.ncodebooks)
 
     def fit(self, X, Q=None):#kmeans learn centroids
-        self.subvect_len = int(np.ceil(X.shape[1] / self.ncodebooks))
+        self.subvect_len = int(cp.ceil(X.shape[1] / self.ncodebooks))
         X = self._pad_ncols(X)
         self.centroids = None
         if self.centroids is None:
@@ -352,16 +360,16 @@ class PQEncoder_CNN(MultiCodebookEncoder):
 
         #Q = np.repeat(Q, self.ncodebooks, axis=0).transpose() #Q:(9,4).
 
-        Q = np.atleast_2d(Q)
+        Q = cp.atleast_2d(Q)
         Q = self._pad_ncols(Q)
-        luts = np.zeros((Q.shape[0], self.ncodebooks, self.ncentroids))
+        luts = cp.zeros((Q.shape[0], self.ncodebooks, self.ncentroids))
         # print("Q shape: ", Q.shape) Q(900,4)
         for i, q in enumerate(Q):
             lut = _fit_pq_lut_cnn(q, centroids=self.centroids)
             if self.quantize_lut and quantize:
-                lut = np.maximum(0, lut - self.lut_offsets)
-                lut = np.floor(lut * self.scale_by).astype(np.int32)
-                lut = np.minimum(lut, 255)
+                lut = cp.maximum(0, lut - self.lut_offsets)
+                lut = cp.floor(lut * self.scale_by).astype(cp.int32)
+                lut = cp.minimum(lut, 255)
             luts[i] = lut.T
             #(4, 100, 16)
         return luts
@@ -376,7 +384,7 @@ class PQEncoder_CNN(MultiCodebookEncoder):
 
 
 def main():
-    X = np.ones((3, 75), dtype=np.int32)
+    X = cp.ones((3, 75), dtype=cp.int32)
     _insert_zeros(X, 53)
 
 
