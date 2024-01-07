@@ -1,9 +1,17 @@
+import torch
 import cupy as cp
+
+GPU = None
 
 def set_gpu(gpu):
     global cuKMeans
+    global GPU
+    GPU = gpu
     cp.cuda.Device(gpu).use()
     from cuml.cluster import KMeans as cuKMeans
+    
+def get_device():
+    return torch.device(f'cuda:{GPU}' if torch.cuda.is_available() else 'cpu')  
     
 def kmeans(X, k, max_iter=16, init='subspaces', return_sse=False):
     X = cp.asarray(X, dtype=cp.float32)

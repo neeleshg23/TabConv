@@ -17,10 +17,10 @@ parser.add_argument('--model', '-m', type=str, required=True, help='Model to tra
 parser.add_argument('--gpu', '-g', type=int, required=True, help='GPU number')
 args = parser.parse_args()
 
-EPOCHS = 50
-EARLY_STOP = 5 
-LR = 0.01
-VAL_SPLIT = 0.1
+EPOCHS = 200 
+EARLY_STOP = 10 
+LR = 0.00075
+VAL_SPLIT = 0.2
 DATASET = args.dataset
 model_abbrev = args.model 
 
@@ -29,7 +29,10 @@ model_save_path = f'../0_RES/1_NN/{model_abbrev}-{DATASET}'
 log = Logger()
 log.set_logger(f'{model_save_path}.log') 
 device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
+print(args.dataset)
 train_loader, val_loader, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', DATASET, VAL_SPLIT)
+print(f"Number of classes: {num_classes}")
+print(f"Number of channels: {num_channels}")
 model = select_model(model_abbrev)(num_classes, num_channels).to(device) 
 optimizer = optim.Adam(model.parameters(), LR)
 

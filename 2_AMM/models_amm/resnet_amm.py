@@ -1,11 +1,15 @@
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.dlpack as dlpack
 from tqdm import tqdm
 import cupy as cp
 import numpy as np
+
 from .amm.pq_amm_cnn import PQ_AMM_CNN
-from .amm.vq_amm import PQMatmul 
+from .amm.vq_amm import PQMatmul
+from .amm.kmeans import get_device
 
 
 def im2col(input_data, kernel_size, stride, pad):
@@ -239,8 +243,8 @@ class ResNet_AMM:
         self.layer4 = self._make_layer(block, DIM*8, 'layer4', num_blocks[3])
         
         self.adaptive_pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc_weights = state_dict['linear.weight'].numpy()
-        self.fc_bias = state_dict['linear.bias'].numpy()
+        self.fc_weights = cp.asarray(state_dict['linear.weight'].numpy())
+        self.fc_bias = cp.asarray(state_dict['linear.bias'].numpy())
         
         self.amm_estimators = []
         self.amm_queue = []
@@ -329,7 +333,9 @@ class ResNet_AMM:
         return cp.maximum(0, x)
     
     def linear_amm(self, input_data, weights, bias, target):
-        weights, bias = self.fine_tune_fc_layer(torch.from_numpy(cp.asnumpy(input_data)).float(), weights, bias, torch.from_numpy(cp.asnumpy(target)).float(), epoch=300, lr=0.001)
+        input_data = torch.from_dlpack(input_data.toDlpack()).float()
+        target = torch.from_dlpack(target.toDlpack()).float()
+        weights, bias = self.fine_tune_fc_layer(input_data, weights, bias, target, epoch=300, lr=0.001)
         est = PQMatmul(self.n, self.k)
         est.fit(input_data, weights)
         est.reset_for_new_task()
@@ -425,16 +431,17 @@ class ResNet_AMM:
                     out = layer.forward(out)
                 intermediate.append(out)
 
-        out = torch.from_numpy(cp.asnumpy(out))
+        out = torch.from_dlpack(out.toDlpack())
         out = self.adaptive_pool(out)
         out = out.reshape(out.shape[0], -1)
-        out = cp.asarray(out.detach().numpy())
+        out = cp.fromDlpack(dlpack.to_dlpack(out))
+        
         out = self.linear_amm(out, self.fc_weights.T, self.fc_bias, target) if switch[-1] else (cp.dot(out, self.fc_weights.T) + self.fc_bias)
         intermediate.append(out)
+        
         self.amm_queue = self.amm_estimators.copy()
+        self.amm_estimators = []
         return out, intermediate
-    
- 
     
     def forward_eval(self, x, switch):
         intermediate = []
@@ -458,10 +465,10 @@ class ResNet_AMM:
                     out = layer.forward(out)
                 intermediate.append(out)
 
-        out = torch.from_numpy(cp.asnumpy(out))
+        out = torch.from_dlpack(out.toDlpack())
         out = self.adaptive_pool(out)
         out = out.reshape(out.shape[0], -1)
-        out = cp.asarray(out.detach().numpy())
+        out = cp.fromDlpack(dlpack.to_dlpack(out))
         
         if switch[-1]:
             est = self.amm_queue.pop(0)
@@ -474,10 +481,15 @@ class ResNet_AMM:
 
     
     def fine_tune_fc_layer(self, new_input, weight, bias, target, epoch=300, lr=0.001):
-        linear_layer = nn.Linear(weight.shape[0], weight.shape[1])
+        device = get_device()
+        linear_layer = nn.Linear(weight.shape[0], weight.shape[1]).to(device)
+       
+        weight_torch = torch.from_dlpack(weight.toDlpack()).float().to(device).t()  # also transpose the weight matrix
+        bias_torch = torch.from_dlpack(bias.toDlpack()).float().to(device)
+        
         with torch.no_grad():
-            linear_layer.weight.copy_(torch.tensor(weight).float().t())  # Transpose the weight matrix
-            linear_layer.bias.copy_(torch.tensor(bias).float())
+            linear_layer.weight.copy_(weight_torch)  
+            linear_layer.bias.copy_(bias_torch)
 
         criterion = nn.MSELoss()
         optimizer = optim.Adam(linear_layer.parameters(), lr=lr)
@@ -490,8 +502,9 @@ class ResNet_AMM:
             optimizer.step()
             if loss.item() < 1e-5:
                 break
-
-        new_weight, new_bias = cp.asarray(linear_layer.weight.detach().numpy()), cp.asarray(linear_layer.bias.detach().numpy())
+        
+        # use dlpack to convert to cupy array
+        new_weight, new_bias = cp.fromDlpack(dlpack.to_dlpack(linear_layer.weight)), cp.fromDlpack(dlpack.to_dlpack(linear_layer.bias))
         return new_weight.T, new_bias  # Transpose back the weight matrix
 
 def resnet14_AMM(state_dict, n, k):

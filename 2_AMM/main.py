@@ -25,7 +25,7 @@ def get_predictions(scores):
     """Convert continuous scores to binary predictions."""
     return np.argmax(scores, axis=1)
 
-def calculate_and_save_metrics(train_cossim, test_cossim, train_res, train_res_amm, test_res, test_res_amm, train_target, test_target, model, dataset, NCODEBOOK, KCENTROID, N_TRAIN, N_TEST, percent, switch):
+def calculate_and_save_metrics(train_cossim, test_cossim, train_res, train_res_amm, test_res, test_res_amm, train_target, test_target, model, dataset, NCODEBOOK, KCENTROID, N_TRAIN, N_TEST, switch):
     print(f'-- Train cosine similarity --')
     for i, cosim in enumerate(train_cossim):
         print(f'Layer {i}: {cosim:.4f}')
@@ -59,11 +59,11 @@ def calculate_and_save_metrics(train_cossim, test_cossim, train_res, train_res_a
     print(f'AMM - Test accuracy: {test_accuracy_amm}')
 
     # save these values to model-dataset-ncodebook-kcentroid-train-test.txt
-    # switch_str = ''.join([str(x) for x in switch])
-    # path = f'../0_RES/2_AMM/{model}-{dataset}-{NCODEBOOK}-{KCENTROID}-{N_TRAIN}-{N_TEST}-{switch_str}.log'
+    switch_str = ''.join([str(x) for x in switch])
+    path = f'../0_RES/2_AMM/{model}-{dataset}-{NCODEBOOK}-{KCENTROID}-{N_TRAIN}-{N_TEST}-{switch_str}.log'
     
     # save these values to model-dataset-ncodebook-kcentroid-train-test-percent.log
-    path = f'../0_RES/2_AMM/{model}-{dataset}-{NCODEBOOK}-{KCENTROID}-{N_TRAIN}-{N_TEST}-{percent}.log'
+    # path = f'../0_RES/2_AMM/{model}-{dataset}-{NCODEBOOK}-{KCENTROID}-{N_TRAIN}-{N_TEST}-{percent}.log'
 
     with open(path, 'w') as f:
         # f.write(f'Percent masked: {percent}\n')
@@ -79,53 +79,8 @@ def calculate_and_save_metrics(train_cossim, test_cossim, train_res, train_res_a
 
 VAL_SPLIT = 0
 
-def run_experiment(model, dataset, gpu, ncodebook, kcentroid, n_train, n_test, percent_mask, train_res): 
-    torch.multiprocessing.set_sharing_strategy('file_system')
-    do_set_gpu(gpu)
-    torch.manual_seed(0)
-
-    train_loader, _, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', dataset, VAL_SPLIT)
-    train_data, train_target = split(train_loader)
-    test_data, test_target = split(test_loader)
-
-    train_data, train_target = train_data[:n_train], train_target[:n_train]
-    test_data, test_target = test_data[:n_test], test_target[:n_test]  
-
-    base_model = select_model(model)(num_classes, num_channels)
-    base_model.load_state_dict(torch.load(f'../0_RES/1_NN/{model}-{dataset}.pth', map_location=torch.device('cpu')))
-    base_model.eval()
-
-    model_amm = select_model_amm(model)(base_model.state_dict(), ncodebook, kcentroid)
-
-    exact_res_train, intermediate_train_res = base_model(train_data)
-    exact_res_test, intermediate_test_res = base_model(test_data)
-    
-    if model == 'r18':
-        num_layers = 10
-    elif model == 'r34':
-        num_layers = 19
-    
-    switch = cp.ones(num_layers, dtype=int)  
-    if percent_mask > 0:
-        cossim_diff = cp.diff(layer_cossim(intermediate_train_res, train_res))
-        top_indices = cp.argsort(-cossim_diff)[:int(percent_mask/100*num_layers)]
-        top_indices = [max(0, x-2) for x in top_indices]
-        switch[top_indices] = 0 
-        print(f"{percent_mask}% masked w/ switch {switch}")
-
-    train_res_amm, intermediate_train_res_amm = model_amm.forward_switch(train_data, switch, cp.asarray(exact_res_train.detach().numpy()))
-    test_res_amm, intermediate_test_res_amm = model_amm.forward_eval(test_data, switch)    
-    
-    train_cosim = layer_cossim(intermediate_train_res, intermediate_train_res_amm)
-    test_cosim = layer_cossim(intermediate_test_res, intermediate_test_res_amm)
-
-    calculate_and_save_metrics(train_cosim, test_cosim, exact_res_train.detach().numpy(), cp.asnumpy(train_res_amm), exact_res_test.detach().numpy(), cp.asnumpy(test_res_amm), train_target, test_target, model, dataset, ncodebook, kcentroid, n_train, n_test, percent_mask, switch)
-
-    return intermediate_train_res 
-
 def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_test, switch): 
     torch.multiprocessing.set_sharing_strategy('file_system')
-    do_set_gpu(gpu)
     torch.manual_seed(0)
 
     train_loader, _, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', dataset, VAL_SPLIT)
@@ -140,16 +95,22 @@ def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_te
     base_model.eval()
 
     model_amm = select_model_amm(model)(base_model.state_dict(), ncodebook, kcentroid)
-
+    
     exact_res_train, intermediate_train_res = base_model(train_data)
     exact_res_test, intermediate_test_res = base_model(test_data)
     
-    train_res_amm, intermediate_train_res_amm = model_amm.forward_switch(train_data, switch, cp.asarray(exact_res_train.detach().numpy()))
+    print("-- Starting Training -- ") 
+    if model == 'n': 
+        train_res_amm, intermediate_train_res_amm = model_amm.forward_switch(train_data, switch) 
+    else:
+        train_res_amm, intermediate_train_res_amm = model_amm.forward_switch(train_data, switch, cp.asarray(exact_res_train.detach().numpy()))
+    
+    print("-- Starting Evaluation -- ")
     test_res_amm, intermediate_test_res_amm = model_amm.forward_eval(test_data, switch)
 
     train_cosim = layer_cossim(intermediate_train_res, intermediate_train_res_amm)
     test_cosim = layer_cossim(intermediate_test_res, intermediate_test_res_amm)
-
+    
     calculate_and_save_metrics(train_cosim, test_cosim, exact_res_train.detach().numpy(), cp.asnumpy(train_res_amm), exact_res_test.detach().numpy(), cp.asnumpy(test_res_amm), train_target, test_target, model, dataset, ncodebook, kcentroid, n_train, n_test, switch)
 
     return intermediate_train_res
@@ -163,18 +124,20 @@ def main():
     parser.add_argument('--kcentroid', '-k', type=int, required=True, help='Number of centroids per subspace')
     parser.add_argument('--train', '-tr', type=int, required=True, help='Number of train images')
     parser.add_argument('--test', '-te', type=int, required=True, help='Number of train images')
-    # parser.add_argument('--switch', '-s', type=str, required=True, help='Switch')
+    parser.add_argument('--switch', '-s', type=str, required=True, help='Switch')
     args = parser.parse_args()
     
+    do_set_gpu(args.gpu)
+    
     # split the switch string into a list of ints
-    # switch = [int(x) for x in args.switch.split(',')]
+    switch = [int(x) for x in args.switch.split(',')]
 
     # run the experiment
-    # run_experiment_mask(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, switch)
+    run_experiment_mask(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, switch)
     
-    full_amm_train_res = run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, 0, None)
-    for percent_mask in [20, 40]:
-        run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, percent_mask, full_amm_train_res)
+    # full_amm_train_res = run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, 0, None)
+    # for percent_mask in [20, 40]:
+    #     run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, percent_mask, full_amm_train_res)
 
 if __name__ == "__main__":
     main()
