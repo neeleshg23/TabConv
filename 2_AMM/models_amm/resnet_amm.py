@@ -117,7 +117,7 @@ class BasicBlock_AMM:
         col_W = W.reshape(FN, -1).T
 
         col_matrix_2d = col.reshape(-1, col.shape[-1])
-
+        
         est = PQ_AMM_CNN(self.n, self.k)  
         est.fit(col_matrix_2d, col_W)
 
@@ -284,7 +284,7 @@ class ResNet_AMM:
         col_W = W.reshape(FN, -1).T
 
         col_matrix_2d = col.reshape(-1, col.shape[-1])
-
+        
         est = PQ_AMM_CNN(self.n, self.k)  
         est.fit(col_matrix_2d, col_W)
 
@@ -349,69 +349,7 @@ class ResNet_AMM:
         weights, bias = cp.asarray(weights), cp.asarray(bias) 
         res = est.predict(input_data, weights) + bias
         return res
-    
-    # def forward(self, x):
-    #     intermediate = [] 
-    #     out = self.conv2d(x, self.conv1_weights, cp.zeros(self.conv1_weights.shape[0]), stride=2, pad=1)
-    #     intermediate.append(out)
-    #     out = self.batch_norm(out, self.bn1_weights, self.bn1_bias, self.bn1_mean, self.bn1_var)
-    #     out = self.relu(out)
-
-    #     layers = [self.layer1, self.layer2, self.layer3, self.layer4]
-    #     for layer_group in layers:
-    #         for layer in layer_group:
-    #             out = layer.forward(out)
-    #             intermediate.append(out)
-
-    #     out = torch.from_numpy(cp.asnumpy(out))
-    #     out = self.adaptive_pool(out)
-    #     out = out.reshape(out.shape[0], -1)
-    #     out = cp.asarray(out.detach().numpy())
-    #     out = cp.dot(out, self.fc_weights.T) + self.fc_bias
-    #     intermediate.append(out)
-    #     return out, intermediate
-
-    # def forward_amm(self, x, target):
-    #     intermediate = [] 
-    #     out = self.conv2d_amm(x, self.conv1_weights, cp.zeros(self.conv1_weights.shape[0]), stride=2, pad=1)
-    #     intermediate.append(out)
-    #     out = self.batch_norm(out, self.bn1_weights, self.bn1_bias, self.bn1_mean, self.bn1_var)
-    #     out = self.relu(out)
-
-    #     layers = [self.layer1, self.layer2, self.layer3, self.layer4]
-    #     for layer_group in layers:
-    #         for layer in layer_group:
-    #             out = layer.forward_amm(out)
-    #             intermediate.append(out)
-
-    #     out = torch.from_numpy(cp.asnumpy(out))
-    #     out = self.adaptive_pool(out)
-    #     out = out.reshape(out.shape[0], -1)
-    #     out = cp.asarray(out.detach().numpy())
-    #     out = self.linear_amm(out, self.fc_weights.T, self.fc_bias, target)
-    #     intermediate.append(out)
-    #     return out, intermediate 
-    
-    # def forward_eval(self, x):
-    #     est = self.amm_queue.pop(0)
-    #     out = self.conv2d_eval(est, x, self.conv1_weights, cp.zeros(self.conv1_weights.shape[0]), stride=2, pad=1)
-    #     out = self.batch_norm(out, self.bn1_weights, self.bn1_bias, self.bn1_mean, self.bn1_var)
-    #     out = self.relu(out)
-        
-    #     layers = [self.layer1, self.layer2, self.layer3, self.layer4]
-    #     for layer_group in layers:
-    #         for layer in layer_group:
-    #             block_ests = self.amm_queue.pop(0)
-    #             out = layer.forward_eval(block_ests, out)
-
-    #     out = torch.from_numpy(cp.asnumpy(out))
-    #     out = self.adaptive_pool(out)
-    #     out = out.reshape(out.shape[0], -1)
-    #     out = cp.asarray(out.detach().numpy())
-    #     est = self.amm_queue.pop(0)
-    #     out = self.linear_eval(est, out, self.fc_weights.T, self.fc_bias)
-    #     return out  
-    
+   
     def forward_switch(self, x, switch, target):
         intermediate = []
         out = self.conv2d_amm(x, self.conv1_weights, cp.zeros(self.conv1_weights.shape[0]), stride=2, pad=1) if switch[0] \
