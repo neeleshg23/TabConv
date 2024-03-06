@@ -10,3 +10,11 @@ To bridge the gap between hardware, algorithmic acceleration, and approximate ma
 Additionally, we introduce a priority masking technique based on cosine similarity to select layers for table-based approximation, thereby maintaining the model performance.
 We evaluate our approach on popular CNNs: ResNet-18, ResNet-34, and NetworkInNetwork (NIN).
 TabConv preserves over 93\% of the original model's performance while reducing arithmetic operations by 36.5\%, 25.8\%, and 99.4\% for ResNet-18 on CIFAR-10, CIFAR-100, and MNIST, respectively, 35.6\% and 99.3\% for ResNet-34 on CIFAR-10 and MNIST, and 98.9\% for NIN on MNIST, achieving low-computation inference.
+
+## Installation
+```bash
+git clone www.github.com/neeleshg23/TabConv.git
+cd TabConv
+conda env create -f env.yaml python=3.9
+conda activate rapid
+```
