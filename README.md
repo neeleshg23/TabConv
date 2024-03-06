@@ -94,6 +94,9 @@ optional arguments:
 python main.py --model r18 --dataset c10 --ncodebook 8 --kcentroid 8192 --train 1000 --test 500 --switch 1,1,1,1,1,1,1,1,1,1 --gpu 0
 ```
 
+### Results
+Accuracy results are found in `/0_RES`.
+
 ### Citation
 ```
 @article{gupta2023tabconv,
