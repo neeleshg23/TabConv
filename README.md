@@ -55,6 +55,11 @@ optional arguments:
   --gpu GPU, -g GPU     GPU number
 ```
 
+#### Example Usage
+```bash
+python main.py --dataset c10 --model r18 --gpu 0
+```
+
 ### Training Table-Based Models
 To train table-based approximations of NNs, navigate to the `2_AMM` directory and run the `main.py` script with appropriate parameters.
 ```bash
@@ -82,4 +87,25 @@ optional arguments:
                         Number of train images
   --switch SWITCH, -s SWITCH
                         String of "Number of Switches" boolean values as 0/1 with comma separation
+```
+
+#### Example Usage
+```bash
+python main.py --model r18 --dataset c10 --ncodebook 8 --kcentroid 8192 --train 1000 --test 500 --switch 1,1,1,1,1,1,1,1,1,1 --gpu 0
+```
+
+### Citation
+```
+@misc{gupta2023tabconv,
+      title={TabConv: Low-Computation CNN Inference via Table Lookups}, 
+      author={Gupta, Neelesh and Kannan, Narayanan and Zhang, Pengmiao and Prasanna, Viktor},
+      year={2024},
+      doi={10.1145/3649153.3649212},
+      booktitle = {Proceedings of the 21st ACM International Conference on Computing Frontiers}
+      series = {CF '24}
+      keywords = {convolutional neural network, table lookup, product quantization},
+      location = {Ischia, Italy},
+      publisher = {Association for Computing Machinery},
+      address = {New York, NY, USA}
+}
 ```
