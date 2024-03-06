@@ -1,7 +1,6 @@
 # TabConv: Low-Computation CNN Inference via Table Lookups 
 
 ## Abstract
-
 Convolutional Neural Networks (CNNs) have demonstrated remarkable ability throughout the field of computer vision. 
 However, CNN inference requires a large number of arithmetic operations, making them expensive to deploy in hardware.
 Current approaches alleviate this issue by developing hardware-supported, algorithmic processes to simplify spatial convolution functions. 
@@ -12,7 +11,7 @@ We evaluate our approach on popular CNNs: ResNet-18, ResNet-34, and NetworkInNet
 TabConv preserves over 93\% of the original model's performance while reducing arithmetic operations by 36.5\%, 25.8\%, and 99.4\% for ResNet-18 on CIFAR-10, CIFAR-100, and MNIST, respectively, 35.6\% and 99.3\% for ResNet-34 on CIFAR-10 and MNIST, and 98.9\% for NIN on MNIST, achieving low-computation inference.
 
 ## Installation
-First, edit line 33 of `1_NN/main.py` to point to the data directory
+Begin by cloning the repository and setting up the environment:
 ```bash
 git clone www.github.com/neeleshg23/TabConv.git
 cd TabConv
@@ -20,6 +19,7 @@ conda env create -f env.yaml python=3.9
 conda activate rapid
 mkdir -p 0_RES/1_NN; mkdir -p 0_RES/2_AMM
 ```
+Edit `1_NN/main.py` line 33 to specify your data directory.
 
 ## Experiment Workflow
 ### Dataset Command Abbreviations
@@ -36,10 +36,14 @@ mkdir -p 0_RES/1_NN; mkdir -p 0_RES/2_AMM
 | ResNet-34        | r34          | 19                 |
 | NetworkInNetwork | n            | 9                  |
 
-### Training Neural Network
+### Training Neural Networks
+To train neural networks, navigate to the `1_NN` directory and run the `main.py` script with appropriate parameters.
 ```bash
 cd 1_NN
 python main.py -h
+```
+Below is the help message displayed.
+```
 usage: main.py [-h] --dataset DATASET --model MODEL --gpu GPU
 
 optional arguments:
@@ -51,3 +55,31 @@ optional arguments:
   --gpu GPU, -g GPU     GPU number
 ```
 
+### Training Table-Based Models
+To train table-based approximations of NNs, navigate to the `2_AMM` directory and run the `main.py` script with appropriate parameters.
+```bash
+cd 2_AMM
+python main.py -h
+```
+Below is the help message displayed.
+```
+usage: main.py [-h] --model MODEL --dataset DATASET --gpu GPU --ncodebook NCODEBOOK --kcentroid KCENTROID --train TRAIN --test TEST --switch SWITCH
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model MODEL, -m MODEL
+                        Model abbreviation
+  --dataset DATASET, -d DATASET
+                        Dataset name
+  --gpu GPU, -g GPU     GPU number
+  --ncodebook NCODEBOOK, -n NCODEBOOK
+                        Number of subspaces per MM
+  --kcentroid KCENTROID, -k KCENTROID
+                        Number of centroids per subspace
+  --train TRAIN, -tr TRAIN
+                        Number of train images
+  --test TEST, -te TEST
+                        Number of train images
+  --switch SWITCH, -s SWITCH
+                        String of "Number of Switches" boolean values as 0/1 with comma separation
+```
