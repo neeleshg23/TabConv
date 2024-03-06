@@ -96,7 +96,7 @@ python main.py --model r18 --dataset c10 --ncodebook 8 --kcentroid 8192 --train 
 
 ### Citation
 ```
-@misc{gupta2023tabconv,
+@article{gupta2023tabconv,
       title={TabConv: Low-Computation CNN Inference via Table Lookups}, 
       author={Gupta, Neelesh and Kannan, Narayanan and Zhang, Pengmiao and Prasanna, Viktor},
       year={2024},
