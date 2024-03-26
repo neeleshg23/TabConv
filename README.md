@@ -99,16 +99,19 @@ Accuracy results are found in `/0_RES`.
 
 ### Citation
 ```
-@article{gupta2023tabconv,
-      title={TabConv: Low-Computation CNN Inference via Table Lookups}, 
-      author={Gupta, Neelesh and Kannan, Narayanan and Zhang, Pengmiao and Prasanna, Viktor},
-      year={2024},
-      doi={10.1145/3649153.3649212},
-      booktitle = {Proceedings of the 21st ACM International Conference on Computing Frontiers},
-      series = {CF '24},
-      keywords = {convolutional neural network, table lookup, product quantization},
-      location = {Ischia, Italy},
-      publisher = {Association for Computing Machinery},
-      address = {New York, NY, USA}
+@inproceedings{gupta2023tabconv,
+  title     = {TabConv: Low-Computation CNN Inference via Table Lookups},
+  author    = {Gupta, Neelesh and Kannan, Narayanan and Zhang, Pengmiao and Prasanna, Viktor},
+  year      = {2024},
+  doi       = {10.1145/3649153.3649212},
+  booktitle = {Proceedings of the 21st ACM International Conference on Computing Frontiers},
+  series    = {CF '24},
+  keywords  = {convolutional neural network, table lookup, product quantization},
+  location  = {Ischia, Italy},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  isbn = {9798400705977},
+  url = {https://doi.org/10.1145/3649153.3649212},
+  numpages = {8}
 }
 ```
