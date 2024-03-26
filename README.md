@@ -104,8 +104,8 @@ Accuracy results are found in `/0_RES`.
       author={Gupta, Neelesh and Kannan, Narayanan and Zhang, Pengmiao and Prasanna, Viktor},
       year={2024},
       doi={10.1145/3649153.3649212},
-      booktitle = {Proceedings of the 21st ACM International Conference on Computing Frontiers}
-      series = {CF '24}
+      booktitle = {Proceedings of the 21st ACM International Conference on Computing Frontiers},
+      series = {CF '24},
       keywords = {convolutional neural network, table lookup, product quantization},
       location = {Ischia, Italy},
       publisher = {Association for Computing Machinery},
