@@ -83,7 +83,7 @@ def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_te
     torch.multiprocessing.set_sharing_strategy('file_system')
     torch.manual_seed(0)
 
-    train_loader, _, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', dataset, VAL_SPLIT)
+    train_loader, _, test_loader, num_classes, num_channels = get_data('/data/CV_Datasets', dataset, VAL_SPLIT)
     train_data, train_target = split(train_loader)
     test_data, test_target = split(test_loader)
 

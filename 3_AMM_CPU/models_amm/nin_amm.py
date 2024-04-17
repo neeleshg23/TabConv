@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.utils.dlpack as dlpack
 import numpy as np
 
 from .amm.pq_amm_cnn import PQ_AMM_CNN
@@ -156,28 +155,28 @@ class NiN_AMM():
         self.amm_estimators.append(est1)  # Save estimators
         intermediate.extend(i1)
         
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.max_pool(x)
         x = self.dropout(x)
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
         
         x, est2, i2 = self.block2.forward(x, ['block2.0', 'block2.2', 'block2.4'], switch[3:6])
         self.amm_estimators.append(est2)  # Save estimators
         intermediate.extend(i2)
          
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.max_pool(x)
         x = self.dropout(x)
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
        
         x, est3, i3 = self.block3.forward(x, ['block3.0', 'block3.2', 'block3.4'], switch[6:9])
         self.amm_estimators.append(est3)  # Save estimators
         intermediate.extend(i3)
          
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.global_avg_pool(x)
         x = x.view(x.size(0), -1)  # Flatten the tensor
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
         
         self.amm_queue = self.amm_estimators.copy()
         self.amm_estimators = []
@@ -190,27 +189,27 @@ class NiN_AMM():
         x, i1 = self.block1.forward_eval(block_est, x, ['block1.0', 'block1.2', 'block1.4'], switch[:3])
         intermediate.extend(i1)
          
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.max_pool(x)
         x = self.dropout(x)
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
         
         block_est = self.amm_queue.pop(0)
         x, i2 = self.block2.forward_eval(block_est, x, ['block2.0', 'block2.2', 'block2.4'], switch[3:6])
         intermediate.extend(i2)
          
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.max_pool(x)
         x = self.dropout(x)
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
         
         block_est = self.amm_queue.pop(0)
         x, i3 = self.block3.forward_eval(block_est, x, ['block3.0', 'block3.2', 'block3.4'], switch[6:9])
         intermediate.extend(i3)
          
-        x = torch.from_dlpack(x.toDlpack())
+        x = torch.from_numpy(x).float()
         x = self.global_avg_pool(x)
         x = x.view(x.size(0), -1)  # Flatten the tensor
-        x = np.from_dlpack(dlpack.to_dlpack(x))
+        x = x.detach().numpy() 
         
         return x, intermediate
