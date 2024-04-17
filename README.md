@@ -19,7 +19,11 @@ conda env create -f env.yaml
 conda activate rapid
 ```
 
-Edit `1_NN/main.py` line 33 to specify your data directory.
+By default, the data directory is set to `/data/CV_Datasets`.
+
+Edit `1_NN/main.py` line 33 to correct this. 
+Edit `2_AMM_GPU/main.py` line 86 to correct this. 
+Edit `3_AMM_CPU/main.py` line 82 to correct this. 
 
 ## Experiment Workflow
 ### Dataset Command Abbreviations
@@ -59,13 +63,11 @@ optional arguments:
 ```bash
 python main.py --dataset c10 --model r18 --gpu 0
 ```
+There is a sample model state dictionary for ResNet-18 on CIFAR-10 in `0_RES/1_NN`.
 
 ### Training Table-Based Models
-To train table-based approximations of NNs, navigate to the `2_AMM` directory and run the `main.py` script with appropriate parameters.
-```bash
-cd 2_AMM_GPU
-python main.py -h
-```
+To train table-based approximations of NNs, navigate to the `2_AMM_GPU` directory for GPU acceleration and `3_AMM_CPU` directory and run the `main.py` script with appropriate parameters on the GPU.
+
 Below is the help message displayed.
 ```
 usage: main.py [-h] --model MODEL --dataset DATASET --gpu GPU --ncodebook NCODEBOOK --kcentroid KCENTROID --train TRAIN --test TEST --switch SWITCH
@@ -89,9 +91,14 @@ optional arguments:
                         String of "Number of Switches" boolean values as 0/1 with comma separation
 ```
 
-#### Example Usage
+#### Example Usage with Pretrained Model Weights
+##### GPU Version:
 ```bash
 python main.py --model r18 --dataset c10 --ncodebook 8 --kcentroid 8192 --train 1000 --test 500 --switch 1,1,1,1,1,1,1,1,1,1 --gpu 0
+```
+##### CPU Version
+```bash
+python main.py --model r18 --dataset c10 --ncodebook 8 --kcentroid 8192 --train 1000 --test 500 --switch 1,1,1,1,1,1,1,1,1,1
 ```
 
 ### Results
