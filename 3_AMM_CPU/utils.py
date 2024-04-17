@@ -1,6 +1,5 @@
 from models_amm.resnet_amm import resnet14_AMM, resnet18_AMM, resnet34_AMM 
 from models_amm.nin_amm import NiN_AMM 
-from models_amm.amm.kmeans import set_gpu
 from models.resnet import resnet14, resnet18, resnet34
 from models.nin import NiN
 
@@ -24,8 +23,3 @@ def select_model_amm(name):
     elif name == 'n':
         return NiN_AMM 
 
-def do_set_gpu(gpu):
-    global GPU
-    GPU = gpu
-    set_gpu(gpu)
-   

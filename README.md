@@ -17,8 +17,8 @@ git clone www.github.com/neeleshg23/TabConv.git
 cd TabConv
 conda env create -f env.yaml 
 conda activate rapid
-mkdir -p 0_RES/1_NN; mkdir -p 0_RES/2_AMM
 ```
+
 Edit `1_NN/main.py` line 33 to specify your data directory.
 
 ## Experiment Workflow

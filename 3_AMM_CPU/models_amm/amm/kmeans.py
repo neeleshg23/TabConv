@@ -5,6 +5,8 @@ from scipy import signal
 from sklearn.cluster import KMeans
 from joblib import Memory
 _memory = Memory('.', verbose=0)
+import warnings
+warnings.filterwarnings("ignore")
 
 @_memory.cache
 #def kmeans(X, k, max_iter=16, init='kmc2', return_sse=False):

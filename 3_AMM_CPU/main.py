@@ -6,10 +6,8 @@ import torch.multiprocessing
 from sklearn.metrics import accuracy_score
 
 from data_loader import get_data
-from utils import select_model, select_model_amm, do_set_gpu
+from utils import select_model, select_model_amm 
 from metrics import layer_cossim
-
-torch.multiprocessing.set_sharing_strategy('file_system')
 
 def split(data_loader):
     all_data, all_targets = [], []
@@ -78,11 +76,10 @@ def calculate_and_save_metrics(train_cossim, test_cossim, train_res, train_res_a
 
 VAL_SPLIT = 0
 
-def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_test, switch): 
-    torch.multiprocessing.set_sharing_strategy('file_system')
+def run_experiment_mask(model, dataset, ncodebook, kcentroid, n_train, n_test, switch): 
     torch.manual_seed(0)
 
-    train_loader, _, test_loader, num_classes, num_channels = get_data('/data/narayanan/CF', dataset, VAL_SPLIT)
+    train_loader, _, test_loader, num_classes, num_channels = get_data('/data/CV_Datasets', dataset, VAL_SPLIT)
     train_data, train_target = split(train_loader)
     test_data, test_target = split(test_loader)
 
@@ -90,7 +87,7 @@ def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_te
     test_data, test_target = test_data[:n_test], test_target[:n_test]  
 
     base_model = select_model(model)(num_classes, num_channels)
-    base_model.load_state_dict(torch.load(f'../0_RES/1_NN/{model}-{dataset}.pth', map_location=torch.device('npu')))
+    base_model.load_state_dict(torch.load(f'../0_RES/1_NN/{model}-{dataset}.pth', map_location=torch.device('cpu')))
     base_model.eval()
 
     model_amm = select_model_amm(model)(base_model.state_dict(), ncodebook, kcentroid)
@@ -110,7 +107,7 @@ def run_experiment_mask(model, dataset, gpu, ncodebook, kcentroid, n_train, n_te
     train_cosim = layer_cossim(intermediate_train_res, intermediate_train_res_amm)
     test_cosim = layer_cossim(intermediate_test_res, intermediate_test_res_amm)
     
-    calculate_and_save_metrics(train_cosim, test_cosim, exact_res_train.detach().numpy(), np.asnumpy(train_res_amm), exact_res_test.detach().numpy(), np.asnumpy(test_res_amm), train_target, test_target, model, dataset, ncodebook, kcentroid, n_train, n_test, switch)
+    calculate_and_save_metrics(train_cosim, test_cosim, exact_res_train.detach().numpy(), train_res_amm, exact_res_test.detach().numpy(), test_res_amm, train_target, test_target, model, dataset, ncodebook, kcentroid, n_train, n_test, switch)
 
     return intermediate_train_res
 #%%
@@ -118,7 +115,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', '-m', type=str, required=True, help='Model abbreviation')
     parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset name')
-    parser.add_argument('--gpu', '-g', type=int, required=True, help='GPU number')
     parser.add_argument('--ncodebook', '-n', type=int, required=True, help='Number of subspaces per MM')
     parser.add_argument('--kcentroid', '-k', type=int, required=True, help='Number of centroids per subspace')
     parser.add_argument('--train', '-tr', type=int, required=True, help='Number of train images')
@@ -126,18 +122,12 @@ def main():
     parser.add_argument('--switch', '-s', type=str, required=True, help='Switch')
     args = parser.parse_args()
     
-    do_set_gpu(args.gpu)
-    
     # split the switch string into a list of ints
     switch = [int(x) for x in args.switch.split(',')]
 
     # run the experiment
-    run_experiment_mask(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, switch)
+    run_experiment_mask(args.model, args.dataset, args.ncodebook, args.kcentroid, args.train, args.test, switch)
     
-    # full_amm_train_res = run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, 0, None)
-    # for percent_mask in [20, 40]:
-    #     run_experiment(args.model, args.dataset, args.gpu, args.ncodebook, args.kcentroid, args.train, args.test, percent_mask, full_amm_train_res)
-
 if __name__ == "__main__":
     main()
 # %%
