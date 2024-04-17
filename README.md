@@ -22,7 +22,9 @@ conda activate rapid
 By default, the data directory is set to `/data/CV_Datasets`.
 
 Edit `1_NN/main.py` line 33 to correct this. 
+
 Edit `2_AMM_GPU/main.py` line 86 to correct this. 
+
 Edit `3_AMM_CPU/main.py` line 82 to correct this. 
 
 ## Experiment Workflow
