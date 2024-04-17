@@ -63,7 +63,7 @@ optional arguments:
 ```bash
 python main.py --dataset c10 --model r18 --gpu 0
 ```
-There is a sample model state dictionary for ResNet-18 on CIFAR-10.
+There is a sample model state dictionary for ResNet-18 on CIFAR-10 in `0_RES/1_NN`.
 
 ### Training Table-Based Models
 To train table-based approximations of NNs, navigate to the `2_AMM_GPU` directory for GPU acceleration and `3_AMM_CPU` directory and run the `main.py` script with appropriate parameters on the GPU.
