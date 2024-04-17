@@ -15,7 +15,7 @@ Begin by cloning the repository and setting up the environment:
 ```bash
 git clone www.github.com/neeleshg23/TabConv.git
 cd TabConv
-conda env create -f env.yaml python=3.9
+conda env create -f env.yaml 
 conda activate rapid
 mkdir -p 0_RES/1_NN; mkdir -p 0_RES/2_AMM
 ```
@@ -63,7 +63,7 @@ python main.py --dataset c10 --model r18 --gpu 0
 ### Training Table-Based Models
 To train table-based approximations of NNs, navigate to the `2_AMM` directory and run the `main.py` script with appropriate parameters.
 ```bash
-cd 2_AMM
+cd 2_AMM_GPU
 python main.py -h
 ```
 Below is the help message displayed.
