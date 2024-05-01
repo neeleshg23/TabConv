@@ -29,7 +29,7 @@ def kmeans(X, k, max_iter=16, init='subspaces', return_sse=False):
             # make a centroid out of each nonzero row, and assign only those
             # rows to that centroid; all other rows get assigned to next
             # centroid after those, which is all zeros
-            centroids[nnz_rows] = X[nonzero_mask]
+            centroids[:nnz_rows] = X[nonzero_mask]
             labels[nonzero_mask] = np.arange(nnz_rows)
         if return_sse:
             return centroids, labels, 0
