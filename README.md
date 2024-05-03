@@ -1,5 +1,7 @@
 # TabConv: Low-Computation CNN Inference via Table Lookups 
 
+<a href="https://zenodo.org/doi/10.5281/zenodo.10983501"><img src="https://zenodo.org/badge/607371605.svg" alt="DOI"></a>
+
 ## Abstract
 Convolutional Neural Networks (CNNs) have demonstrated remarkable ability throughout the field of computer vision. 
 However, CNN inference requires a large number of arithmetic operations, making them expensive to deploy in hardware.
